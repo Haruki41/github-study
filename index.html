@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>タスク管理</title>
+  <style>
+    /* ===== 見た目（CSS） ===== */
+    body {
+      font-family: sans-serif;
+      background: #0079bf;      /* Trelloっぽい青 */
+      margin: 0;
+      padding: 20px;
+    }
+    h1 { color: white; }
+
+    /* 3つの列を横に並べる */
+    #board {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    /* 1つの列 */
+    .column {
+      background: #ebecf0;
+      border-radius: 6px;
+      width: 280px;
+      padding: 10px;
+    }
+    .column h2 { font-size: 16px; margin: 0 0 10px; }
+
+    /* カードを置く場所（空でもドロップできるよう高さを確保） */
+    .cards { min-height: 40px; }
+
+    /* 1枚のカード */
+    .card {
+      background: white;
+      border-radius: 4px;
+      padding: 8px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      cursor: grab;
+      user-select: none;            /* 文字が選択されてドラッグを邪魔しないようにする */
+      display: flex;
+      justify-content: space-between;
+    }
+    .card button {
+      border: none;
+      background: none;
+      color: #999;
+      cursor: pointer;
+    }
+
+    /* 追加フォーム */
+    .add-form { display: flex; gap: 4px; }
+    .add-form input { flex: 1; padding: 6px; }
+  </style>
+</head>
+<body>
+  <h1>タスク管理ボード</h1>
+
+  <!-- ===== 画面の骨組み（HTML） ===== -->
+  <div id="board">
+    <div class="column" data-status="todo">
+      <h2>未着手</h2>
+      <div class="cards"></div>
+      <div class="add-form">
+        <input type="text" placeholder="タスクを入力">
+        <button>追加</button>
+      </div>
+    </div>
+
+    <div class="column" data-status="doing">
+      <h2>進行中</h2>
+      <div class="cards"></div>
+      <div class="add-form">
+        <input type="text" placeholder="タスクを入力">
+        <button>追加</button>
+      </div>
+    </div>
+
+    <div class="column" data-status="done">
+      <h2>完了</h2>
+      <div class="cards"></div>
+      <div class="add-form">
+        <input type="text" placeholder="タスクを入力">
+        <button>追加</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== 動き（JavaScript） =====
+
+    // タスク一覧のデータ。例: { id: 1, text: "買い物", status: "todo" }
+    // 保存してあるデータがあれば読み込み、なければ空にする
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    // データをブラウザに保存する（閉じても消えない）
+    function save() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    // データをもとに画面を描き直す
+    function render() {
+      // まず全部の列を空にする
+      document.querySelectorAll(".cards").forEach(function (box) {
+        box.innerHTML = "";
+      });
+
+      // タスクを1つずつカードにして、該当の列に入れる
+      tasks.forEach(function (task) {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.draggable = true;          // ドラッグ可能にする
+
+        const label = document.createElement("span");
+        label.textContent = task.text;  // textContent なので安全に表示される
+
+        const del = document.createElement("button");
+        del.textContent = "×";
+        del.onclick = function () {     // ×ボタンで削除
+          tasks = tasks.filter(function (t) { return t.id !== task.id; });
+          save();
+          render();
+        };
+
+        card.appendChild(label);
+        card.appendChild(del);
+
+        // ドラッグ開始時に「どのタスクか」を覚えさせる
+        card.addEventListener("dragstart", function (e) {
+          e.dataTransfer.setData("text/plain", task.id);
+        });
+
+        document
+          .querySelector('.column[data-status="' + task.status + '"] .cards')
+          .appendChild(card);
+      });
+    }
+
+    // 各列の設定（追加ボタン・ドロップ）
+    document.querySelectorAll(".column").forEach(function (column) {
+      const status = column.dataset.status;
+      const input = column.querySelector("input");
+      const button = column.querySelector("button");
+
+      // 「追加」ボタンの処理
+      function addTask() {
+        const text = input.value.trim();
+        if (text === "") return;        // 空欄なら何もしない
+        tasks.push({ id: Date.now(), text: text, status: status });
+        input.value = "";
+        save();
+        render();
+      }
+      button.onclick = addTask;
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") addTask(); // Enterキーでも追加
+      });
+
+      // ドロップできるようにする（これがないとドロップ不可）
+      column.addEventListener("dragover", function (e) {
+        e.preventDefault();
+      });
+
+      // ドロップされたら、そのタスクの列を変更する
+      column.addEventListener("drop", function (e) {
+        e.preventDefault();
+        const id = Number(e.dataTransfer.getData("text/plain"));
+        const task = tasks.find(function (t) { return t.id === id; });
+        if (task) {
+          task.status = status;
+          save();
+          render();
+        }
+      });
+    });
+
+    // 最初に1回、画面を描く
+    render();
+  </script>
+</body>
+</html>
