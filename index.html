@@ -54,6 +54,15 @@
     /* 追加フォーム */
     .add-form { display: flex; gap: 4px; }
     .add-form input { flex: 1; padding: 6px; }
+
+    /* 入力エラーのメッセージ（赤文字） */
+    .error-message {
+      color: red;
+      font-size: 13px;
+      margin: 4px 0 0;
+      min-height: 1em;
+    }
+    .add-form input.error { border: 2px solid red; }
   </style>
 </head>
 <body>
@@ -145,16 +154,34 @@
       const input = column.querySelector("input");
       const button = column.querySelector("button");
 
+      // エラーメッセージを表示する場所を、追加フォームの下に作る
+      const errorBox = document.createElement("p");
+      errorBox.className = "error-message";
+      column.appendChild(errorBox);
+
       // 「追加」ボタンの処理
       function addTask() {
         const text = input.value.trim();
-        if (text === "") return;        // 空欄なら何もしない
+        if (text === "") {              // 空欄なら、エラーを出して終了
+          errorBox.textContent = "タスクの内容を入力してください";
+          input.classList.add("error");
+          input.focus();
+          return;
+        }
+        errorBox.textContent = "";      // 成功したらエラーを消す
+        input.classList.remove("error");
         tasks.push({ id: Date.now(), text: text, status: status });
         input.value = "";
         save();
         render();
       }
       button.onclick = addTask;
+
+      // 文字を入力し始めたらエラーを消す
+      input.addEventListener("input", function () {
+        errorBox.textContent = "";
+        input.classList.remove("error");
+      });
       input.addEventListener("keydown", function (e) {
         if (e.key === "Enter") addTask(); // Enterキーでも追加
       });
