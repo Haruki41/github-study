@@ -17,6 +17,14 @@
 - ユーザーの許可なく PR をマージすること、ブランチ保護や Ruleset を変更・解除すること。
 - フック（`--no-verify`）や署名の回避。
 
+### 機械的なガード（hooks）
+`.claude/settings.json` と `.claude/hooks/guard-main.sh` が、上の禁止事項を Claude Code のツール実行前に検査する。
+- ブロック：`main` への push、`main` 上での commit / push、force push、`--no-verify` など。
+- 実行前に確認：Ruleset・ブランチ保護を変更する `gh api`（POST / PUT / PATCH / DELETE）。
+- コミットメッセージにコマンド風の文字列（`--force` など）を含めると誤検知することがある。長いメッセージは `git commit -F ファイル` で渡す。
+- hooks はセッション開始時に読み込まれる。変更後は Claude Code を再起動する。
+- ブロックされたら回避せず、手順（Issue、ブランチ、PR）を守り直す。
+
 ## 3. ブランチ名
 `<種類>/<Issue番号>-<英小文字とハイフンの短い説明>`
 
