@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react'
 
-// API の応答の形（backend の TaskModels と対応）。ボード画面の実装時に整理する。
-type Board = {
-  id: number
-  name: string
-  columns: { id: number; name: string; cards: { id: number; text: string }[] }[]
-}
+// API の応答の形（backend の TaskModels と対応）
+type Card = { id: number; text: string }
+type Column = { id: number; name: string; cards: Card[] }
+type Board = { id: number; name: string; columns: Column[] }
 
 type State =
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'ok'; board: Board }
 
-// 環境構築の確認用の最小画面。ボード表示は別 Issue で作る。
+// S-01 タスク管理ボード画面（F-01 ボード表示）。表示のみで、書き込み機能は別 Issue。
 function App() {
   const [state, setState] = useState<State>({ status: 'loading' })
 
@@ -32,15 +30,27 @@ function App() {
   }, [])
 
   return (
-    <main>
-      <h1>タスク管理ボード（API 接続確認）</h1>
-      {state.status === 'loading' && <p>読み込み中…</p>}
-      {state.status === 'error' && <p>サーバーに接続できません（{state.message}）</p>}
+    <main className="app">
+      <h1>タスク管理ボード</h1>
+      {state.status === 'loading' && <p className="notice">読み込み中…</p>}
+      {state.status === 'error' && (
+        <p className="notice error">サーバーに接続できません（{state.message}）</p>
+      )}
       {state.status === 'ok' && (
-        <p>
-          接続できました：ボード「{state.board.name}」、列 {state.board.columns.length} 個、
-          カード {state.board.columns.reduce((n, c) => n + c.cards.length, 0)} 枚
-        </p>
+        <div className="board">
+          {state.board.columns.map((column) => (
+            <section key={column.id} className="column">
+              <h2>{column.name}</h2>
+              <ul className="cards">
+                {column.cards.map((card) => (
+                  <li key={card.id} className="card">
+                    {card.text}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
     </main>
   )
