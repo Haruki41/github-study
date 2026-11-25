@@ -50,9 +50,32 @@
 - 本文は PR テンプレートに沿い、`Closes #番号` を必ず入れる。
 - 確認方法（動かした手順・結果）を書く。確認していないことは「未確認」と書く。
 
-## 7. 開発環境のメモ
+## 7. 開発サーバーのポート（厳守）
+動作確認のためにサーバーを起動するときは、**必ず次のポートで動かす**。別ポートでの起動は、一時的であっても禁止。
+
+| サーバー | ポート |
+|---|---|
+| バックエンド（Spring Boot） | **8080** |
+| フロントエンド（Vite） | **5173** |
+
+- 画面は `/api` を 8080 へ転送する設計のため、別ポートでは動かない。
+- **ポートが競合（使用中）の場合は、必ずそのポートの持ち主を停止してから、決められたポートで起動する。** 別ポートへ逃げない。
+- 起動・停止は、スキル `dev-servers`（`.claude/skills/dev-servers/SKILL.md`）の手順で、スクリプトを使う。
+  - 起動：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-servers.ps1 -Action start`
+  - 停止：同じスクリプトを `-Action stop`、状況確認は `-Action status`
+  - 確認で起動したサーバーは、確認後に停止する。
+- **停止したプロセスは、ユーザーに必ず報告する。**
+- Windows のシステム、Docker・WSL 関連のプロセスは、スクリプトが自動停止せずエラーで止まる。回避せず、ユーザーに報告して指示を仰ぐ。
+- DB（5432 番）の競合は対象外。データに影響し得るため、自動では停止せず、ユーザーに確認する。
+- 機械的なガード：
+  - `application.properties` の `server.port=8080`、`vite.config.ts` の `strictPort: true` により、使用中でも別ポートへ逃げず、エラーで止まる。
+  - `.claude/hooks/guard-ports.sh` が、`--port`、`server.port`、`PORT=` など、別ポートを指定する起動コマンドをブロックする。
+- ポート番号を変更する場合は、`application.properties`、`vite.config.ts`、`scripts/dev-servers.ps1`、このセクションを一緒に直す。
+
+## 8. 開発環境のメモ
 - DB は Docker の PostgreSQL（`docker compose up -d`、`github-study` フォルダで実行）。
 - バックエンドは `backend/` で `./gradlew bootRun`（Spring Boot、Java 17。8080 番）。
+- サーバーの起動・停止は「7. 開発サーバーのポート」のスクリプトを使う。
 - フロントエンドは `frontend/`（Vite + React + TypeScript）。`npm install` のあと `npm run dev`（5173 番）。`/api` は Vite のプロキシでバックエンド（8080）へ転送される。`npm run build` と `npm run lint` で確認できる。
 - 画面の確認は、DB → API → 画面の順に起動し、`http://localhost:5173` を開く。動作の自動確認には、ヘッドレス Edge（`msedge.exe --headless=new --dump-dom <URL>`）が使える。
 - `docker` / `gh` / `node` が PATH にない場合は、`C:\Program Files\Docker\Docker\resources\bin\docker.exe`、`C:\Program Files\GitHub CLI\gh.exe`、`C:\Program Files\nodejs\node.exe`（`npm.cmd` も同じフォルダ）を直接指定する。
