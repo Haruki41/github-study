@@ -52,5 +52,7 @@
 
 ## 7. 開発環境のメモ
 - DB は Docker の PostgreSQL（`docker compose up -d`、`github-study` フォルダで実行）。
-- バックエンドは `backend/` で `./gradlew bootRun`（Spring Boot、Java 17）。
-- `docker` / `gh` が PATH にない場合は、`C:\Program Files\Docker\Docker\resources\bin\docker.exe`、`C:\Program Files\GitHub CLI\gh.exe` を直接指定する。
+- バックエンドは `backend/` で `./gradlew bootRun`（Spring Boot、Java 17。8080 番）。
+- フロントエンドは `frontend/`（Vite + React + TypeScript）。`npm install` のあと `npm run dev`（5173 番）。`/api` は Vite のプロキシでバックエンド（8080）へ転送される。`npm run build` と `npm run lint` で確認できる。
+- 画面の確認は、DB → API → 画面の順に起動し、`http://localhost:5173` を開く。動作の自動確認には、ヘッドレス Edge（`msedge.exe --headless=new --dump-dom <URL>`）が使える。
+- `docker` / `gh` / `node` が PATH にない場合は、`C:\Program Files\Docker\Docker\resources\bin\docker.exe`、`C:\Program Files\GitHub CLI\gh.exe`、`C:\Program Files\nodejs\node.exe`（`npm.cmd` も同じフォルダ）を直接指定する。
